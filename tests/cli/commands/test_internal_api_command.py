@@ -30,7 +30,6 @@ from airflow import settings
 from airflow.cli import cli_parser
 from airflow.cli.commands import internal_api_command
 from airflow.cli.commands.internal_api_command import GunicornMonitor
-from airflow.settings import _ENABLE_AIP_44
 from tests.cli.commands._common_cli_classes import _ComonCLIGunicornTestClass
 from tests.test_utils.config import conf_vars
 
@@ -84,7 +83,6 @@ class TestCLIGetNumReadyWorkersRunning:
 
 
 @pytest.mark.db_test
-@pytest.mark.skipif(not _ENABLE_AIP_44, reason="AIP-44 is disabled")
 class TestCliInternalAPI(_ComonCLIGunicornTestClass):
     main_process_regexp = r"airflow internal-api"
 
