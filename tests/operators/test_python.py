@@ -151,7 +151,7 @@ class BasePythonTest:
 
     def run_as_operator(self, fn, **kwargs):
         """Run task by direct call ``run`` method."""
-        with self.dag:
+        with self.dag_maker(self.dag_id, template_searchpath=TEMPLATE_SEARCHPATH, serialized=True):
             task = self.opcls(task_id=self.task_id, python_callable=fn, **self.default_kwargs(**kwargs))
 
         task.run(start_date=self.default_date, end_date=self.default_date)
@@ -369,7 +369,7 @@ class TestBranchOperator(BasePythonTest):
         self.branch_2 = EmptyOperator(task_id="branch_2")
 
     def test_with_dag_run(self):
-        with self.dag:
+        with self.dag_maker(self.dag_id, template_searchpath=TEMPLATE_SEARCHPATH, serialized=True):
 
             def f():
                 return "branch_1"
@@ -377,14 +377,14 @@ class TestBranchOperator(BasePythonTest):
             branch_op = self.opcls(task_id=self.task_id, python_callable=f, **self.default_kwargs())
             branch_op >> [self.branch_1, self.branch_2]
 
-        dr = self.create_dag_run()
+        dr = self.dagmaker.create_dagrun()
         branch_op.run(start_date=self.default_date, end_date=self.default_date)
         self.assert_expected_task_states(
             dr, {self.task_id: State.SUCCESS, "branch_1": State.NONE, "branch_2": State.SKIPPED}
         )
 
     def test_with_skip_in_branch_downstream_dependencies(self):
-        with self.dag:
+        with self.dag_maker(self.dag_id, template_searchpath=TEMPLATE_SEARCHPATH, serialized=True):
 
             def f():
                 return "branch_1"
@@ -392,15 +392,14 @@ class TestBranchOperator(BasePythonTest):
             branch_op = self.opcls(task_id=self.task_id, python_callable=f, **self.default_kwargs())
             branch_op >> self.branch_1 >> self.branch_2
             branch_op >> self.branch_2
-
-        dr = self.create_dag_run()
+        dr = self.dag_maker.create_dagrun()
         branch_op.run(start_date=self.default_date, end_date=self.default_date)
         self.assert_expected_task_states(
             dr, {self.task_id: State.SUCCESS, "branch_1": State.NONE, "branch_2": State.NONE}
         )
 
     def test_with_skip_in_branch_downstream_dependencies2(self):
-        with self.dag:
+        with self.dag_maker(self.dag_id, template_searchpath=TEMPLATE_SEARCHPATH, serialized=True):
 
             def f():
                 return "branch_2"
@@ -409,14 +408,14 @@ class TestBranchOperator(BasePythonTest):
             branch_op >> self.branch_1 >> self.branch_2
             branch_op >> self.branch_2
 
-        dr = self.create_dag_run()
+        dr = self.dagmaker.create_dagrun()
         branch_op.run(start_date=self.default_date, end_date=self.default_date)
         self.assert_expected_task_states(
             dr, {self.task_id: State.SUCCESS, "branch_1": State.SKIPPED, "branch_2": State.NONE}
         )
 
     def test_xcom_push(self):
-        with self.dag:
+        with self.dag_maker(self.dag_id, template_searchpath=TEMPLATE_SEARCHPATH, serialized=True):
 
             def f():
                 return "branch_1"
@@ -424,7 +423,7 @@ class TestBranchOperator(BasePythonTest):
             branch_op = self.opcls(task_id=self.task_id, python_callable=f, **self.default_kwargs())
             branch_op >> [self.branch_1, self.branch_2]
 
-        dr = self.create_dag_run()
+        dr = self.dagmaker.create_dagrun()
         branch_op.run(start_date=self.default_date, end_date=self.default_date)
         for ti in dr.get_task_instances():
             if ti.task_id == self.task_id:
@@ -438,7 +437,7 @@ class TestBranchOperator(BasePythonTest):
         After a downstream task is skipped by BranchPythonOperator, clearing the skipped task
         should not cause it to be executed.
         """
-        with self.dag:
+        with self.dag_maker(self.dag_id, template_searchpath=TEMPLATE_SEARCHPATH, serialized=True):
 
             def f():
                 return "branch_1"
@@ -447,7 +446,7 @@ class TestBranchOperator(BasePythonTest):
             branches = [self.branch_1, self.branch_2]
             branch_op >> branches
 
-        dr = self.create_dag_run()
+        dr = self.dagmaker.create_dagrun()
         branch_op.run(start_date=self.default_date, end_date=self.default_date)
         for task in branches:
             task.run(start_date=self.default_date, end_date=self.default_date)
@@ -503,7 +502,7 @@ class TestBranchOperator(BasePythonTest):
         """
         Tests that BranchPythonOperator handles empty branches properly.
         """
-        with self.dag:
+        with self.dag_maker(self.dag_id, template_searchpath=TEMPLATE_SEARCHPATH, serialized=True):
 
             def f():
                 return choice
@@ -515,7 +514,7 @@ class TestBranchOperator(BasePythonTest):
             branch >> [task1, join]
             task1 >> join
 
-        dr = self.create_dag_run()
+        dr = self.dagmaker.create_dagrun()
         task_ids = [self.task_id, "task1", "join"]
         tis = {ti.task_id: ti for ti in dr.task_instances}
 
@@ -645,7 +644,7 @@ class TestShortCircuitOperator(BasePythonTest):
         Checking the behavior of the ShortCircuitOperator in several scenarios enabling/disabling the skipping
         of downstream tasks, both short-circuiting modes, and various trigger rules of downstream tasks.
         """
-        with self.dag:
+        with self.dag_maker(self.dag_id, template_searchpath=TEMPLATE_SEARCHPATH, serialized=True):
             short_circuit = ShortCircuitOperator(
                 task_id="short_circuit",
                 python_callable=lambda: callable_return,
@@ -654,7 +653,7 @@ class TestShortCircuitOperator(BasePythonTest):
             short_circuit >> self.op1 >> self.op2
             self.op2.trigger_rule = test_trigger_rule
 
-        dr = self.create_dag_run()
+        dr = self.dagmaker.create_dagrun()
         short_circuit.run(start_date=self.default_date, end_date=self.default_date)
         self.op1.run(start_date=self.default_date, end_date=self.default_date)
         self.op2.run(start_date=self.default_date, end_date=self.default_date)
@@ -670,10 +669,10 @@ class TestShortCircuitOperator(BasePythonTest):
         After a downstream task is skipped by ShortCircuitOperator, clearing the skipped task
         should not cause it to be executed.
         """
-        with self.dag:
+        with self.dag_maker(self.dag_id, template_searchpath=TEMPLATE_SEARCHPATH, serialized=True):
             short_circuit = ShortCircuitOperator(task_id="short_circuit", python_callable=lambda: False)
             short_circuit >> self.op1 >> self.op2
-        dr = self.create_dag_run()
+        dr = self.dagmaker.create_dagrun()
 
         short_circuit.run(start_date=self.default_date, end_date=self.default_date)
         self.op1.run(start_date=self.default_date, end_date=self.default_date)
@@ -700,7 +699,7 @@ class TestShortCircuitOperator(BasePythonTest):
         self.assert_expected_task_states(dr, expected_states)
 
     def test_xcom_push(self):
-        with self.dag:
+        with self.dag_maker(self.dag_id, template_searchpath=TEMPLATE_SEARCHPATH, serialized=True):
             short_op_push_xcom = ShortCircuitOperator(
                 task_id="push_xcom_from_shortcircuit", python_callable=lambda: "signature"
             )
@@ -708,7 +707,7 @@ class TestShortCircuitOperator(BasePythonTest):
                 task_id="do_not_push_xcom_from_shortcircuit", python_callable=lambda: False
             )
 
-        dr = self.create_dag_run()
+        dr = self.dagmaker.create_dagrun()
         short_op_push_xcom.run(start_date=self.default_date, end_date=self.default_date)
         short_op_no_push_xcom.run(start_date=self.default_date, end_date=self.default_date)
 
@@ -717,13 +716,13 @@ class TestShortCircuitOperator(BasePythonTest):
         assert tis[0].xcom_pull(task_ids=short_op_no_push_xcom.task_id, key="return_value") is False
 
     def test_xcom_push_skipped_tasks(self):
-        with self.dag:
+        with self.dag_maker(self.dag_id, template_searchpath=TEMPLATE_SEARCHPATH, serialized=True):
             short_op_push_xcom = ShortCircuitOperator(
                 task_id="push_xcom_from_shortcircuit", python_callable=lambda: False
             )
             empty_task = EmptyOperator(task_id="empty_task")
             short_op_push_xcom >> empty_task
-        dr = self.create_dag_run()
+        dr = self.dagmaker.create_dagrun()
         short_op_push_xcom.run(start_date=self.default_date, end_date=self.default_date)
         tis = dr.get_task_instances()
         assert tis[0].xcom_pull(task_ids=short_op_push_xcom.task_id, key="skipmixin_key") == {
@@ -731,7 +730,7 @@ class TestShortCircuitOperator(BasePythonTest):
         }
 
     def test_mapped_xcom_push_skipped_tasks(self, session):
-        with self.dag:
+        with self.dag_maker(self.dag_id, template_searchpath=TEMPLATE_SEARCHPATH, serialized=True):
 
             @task_group
             def group(x):
@@ -744,7 +743,7 @@ class TestShortCircuitOperator(BasePythonTest):
                 short_op_push_xcom >> empty_task
 
             group.expand(x=[0, 1])
-        dr = self.create_dag_run()
+        dr = self.dagmaker.create_dagrun()
         decision = dr.task_instance_scheduling_decisions(session=session)
         for ti in decision.schedulable_tis:
             ti.run()
@@ -1491,7 +1490,7 @@ class BaseTestBranchPythonVirtualenvOperator(BaseTestPythonVirtualenvOperator):
             self.run_as_task(f, do_not_use_caching=True)
 
     def test_with_dag_run(self):
-        with self.dag:
+        with self.dag_maker(self.dag_id, template_searchpath=TEMPLATE_SEARCHPATH, serialized=True):
 
             def f():
                 return "branch_1"
@@ -1499,14 +1498,14 @@ class BaseTestBranchPythonVirtualenvOperator(BaseTestPythonVirtualenvOperator):
             branch_op = self.opcls(task_id=self.task_id, python_callable=f, **self.default_kwargs())
             branch_op >> [self.branch_1, self.branch_2]
 
-        dr = self.create_dag_run()
+        dr = self.dagmaker.create_dagrun()
         branch_op.run(start_date=self.default_date, end_date=self.default_date)
         self.assert_expected_task_states(
             dr, {self.task_id: State.SUCCESS, "branch_1": State.NONE, "branch_2": State.SKIPPED}
         )
 
     def test_with_skip_in_branch_downstream_dependencies(self):
-        with self.dag:
+        with self.dag_maker(self.dag_id, template_searchpath=TEMPLATE_SEARCHPATH, serialized=True):
 
             def f():
                 return "branch_1"
@@ -1515,14 +1514,14 @@ class BaseTestBranchPythonVirtualenvOperator(BaseTestPythonVirtualenvOperator):
             branch_op >> self.branch_1 >> self.branch_2
             branch_op >> self.branch_2
 
-        dr = self.create_dag_run()
+        dr = self.dagmaker.create_dagrun()
         branch_op.run(start_date=self.default_date, end_date=self.default_date)
         self.assert_expected_task_states(
             dr, {self.task_id: State.SUCCESS, "branch_1": State.NONE, "branch_2": State.NONE}
         )
 
     def test_with_skip_in_branch_downstream_dependencies2(self):
-        with self.dag:
+        with self.dag_maker(self.dag_id, template_searchpath=TEMPLATE_SEARCHPATH, serialized=True):
 
             def f():
                 return "branch_2"
@@ -1531,14 +1530,14 @@ class BaseTestBranchPythonVirtualenvOperator(BaseTestPythonVirtualenvOperator):
             branch_op >> self.branch_1 >> self.branch_2
             branch_op >> self.branch_2
 
-        dr = self.create_dag_run()
+        dr = self.dagmaker.create_dagrun()
         branch_op.run(start_date=self.default_date, end_date=self.default_date)
         self.assert_expected_task_states(
             dr, {self.task_id: State.SUCCESS, "branch_1": State.SKIPPED, "branch_2": State.NONE}
         )
 
     def test_xcom_push(self):
-        with self.dag:
+        with self.dag_maker(self.dag_id, template_searchpath=TEMPLATE_SEARCHPATH, serialized=True):
 
             def f():
                 return "branch_1"
@@ -1546,7 +1545,7 @@ class BaseTestBranchPythonVirtualenvOperator(BaseTestPythonVirtualenvOperator):
             branch_op = self.opcls(task_id=self.task_id, python_callable=f, **self.default_kwargs())
             branch_op >> [self.branch_1, self.branch_2]
 
-        dr = self.create_dag_run()
+        dr = self.dagmaker.create_dagrun()
         branch_op.run(start_date=self.default_date, end_date=self.default_date)
         for ti in dr.get_task_instances():
             if ti.task_id == self.task_id:
@@ -1560,7 +1559,7 @@ class BaseTestBranchPythonVirtualenvOperator(BaseTestPythonVirtualenvOperator):
         After a downstream task is skipped by BranchPythonOperator, clearing the skipped task
         should not cause it to be executed.
         """
-        with self.dag:
+        with self.dag_maker(self.dag_id, template_searchpath=TEMPLATE_SEARCHPATH, serialized=True):
 
             def f():
                 return "branch_1"
@@ -1569,7 +1568,7 @@ class BaseTestBranchPythonVirtualenvOperator(BaseTestPythonVirtualenvOperator):
             branches = [self.branch_1, self.branch_2]
             branch_op >> branches
 
-        dr = self.create_dag_run()
+        dr = self.dagmaker.create_dagrun()
         branch_op.run(start_date=self.default_date, end_date=self.default_date)
         for task in branches:
             task.run(start_date=self.default_date, end_date=self.default_date)
