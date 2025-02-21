@@ -16,6 +16,7 @@ import {
   DagWarningService,
   DagsService,
   DashboardService,
+  DependenciesService,
   EventLogService,
   ExtraLinksService,
   GridService,
@@ -552,6 +553,32 @@ export const useDagsServiceRecentDagRuns = <
     ...options,
   });
 /**
+ * Get Dependencies
+ * Dependencies graph.
+ * @param data The data for the request.
+ * @param data.nodeId
+ * @returns BaseGraphResponse Successful Response
+ * @throws ApiError
+ */
+export const useDependenciesServiceGetDependencies = <
+  TData = Common.DependenciesServiceGetDependenciesDefaultResponse,
+  TError = unknown,
+  TQueryKey extends Array<unknown> = unknown[],
+>(
+  {
+    nodeId,
+  }: {
+    nodeId?: string;
+  } = {},
+  queryKey?: TQueryKey,
+  options?: Omit<UseQueryOptions<TData, TError>, "queryKey" | "queryFn">,
+) =>
+  useQuery<TData, TError>({
+    queryKey: Common.UseDependenciesServiceGetDependenciesKeyFn({ nodeId }, queryKey),
+    queryFn: () => DependenciesService.getDependencies({ nodeId }) as TData,
+    ...options,
+  });
+/**
  * Historical Metrics
  * Return cluster activity historical metrics.
  * @param data The data for the request.
@@ -738,14 +765,16 @@ export const useBackfillServiceGetBackfill = <
  * @param data.dagId
  * @param data.includeUpstream
  * @param data.includeDownstream
- * @param data.logicalDateGte
- * @param data.logicalDateLte
  * @param data.root
  * @param data.offset
  * @param data.runType
  * @param data.state
  * @param data.limit
  * @param data.orderBy
+ * @param data.runAfterGte
+ * @param data.runAfterLte
+ * @param data.logicalDateGte
+ * @param data.logicalDateLte
  * @returns GridResponse Successful Response
  * @throws ApiError
  */
@@ -764,6 +793,8 @@ export const useGridServiceGridData = <
     offset,
     orderBy,
     root,
+    runAfterGte,
+    runAfterLte,
     runType,
     state,
   }: {
@@ -776,6 +807,8 @@ export const useGridServiceGridData = <
     offset?: number;
     orderBy?: string;
     root?: string;
+    runAfterGte?: string;
+    runAfterLte?: string;
     runType?: string[];
     state?: string[];
   },
@@ -794,6 +827,8 @@ export const useGridServiceGridData = <
         offset,
         orderBy,
         root,
+        runAfterGte,
+        runAfterLte,
         runType,
         state,
       },
@@ -810,6 +845,8 @@ export const useGridServiceGridData = <
         offset,
         orderBy,
         root,
+        runAfterGte,
+        runAfterLte,
         runType,
         state,
       }) as TData,
@@ -939,6 +976,8 @@ export const useDagRunServiceGetUpstreamAssetEvents = <
  * @param data.dagId
  * @param data.limit
  * @param data.offset
+ * @param data.runAfterGte
+ * @param data.runAfterLte
  * @param data.logicalDateGte
  * @param data.logicalDateLte
  * @param data.startDateGte
@@ -966,6 +1005,8 @@ export const useDagRunServiceGetDagRuns = <
     logicalDateLte,
     offset,
     orderBy,
+    runAfterGte,
+    runAfterLte,
     startDateGte,
     startDateLte,
     state,
@@ -980,6 +1021,8 @@ export const useDagRunServiceGetDagRuns = <
     logicalDateLte?: string;
     offset?: number;
     orderBy?: string;
+    runAfterGte?: string;
+    runAfterLte?: string;
     startDateGte?: string;
     startDateLte?: string;
     state?: string[];
@@ -1000,6 +1043,8 @@ export const useDagRunServiceGetDagRuns = <
         logicalDateLte,
         offset,
         orderBy,
+        runAfterGte,
+        runAfterLte,
         startDateGte,
         startDateLte,
         state,
@@ -1018,6 +1063,8 @@ export const useDagRunServiceGetDagRuns = <
         logicalDateLte,
         offset,
         orderBy,
+        runAfterGte,
+        runAfterLte,
         startDateGte,
         startDateLte,
         state,
@@ -1583,6 +1630,8 @@ export const useTaskInstanceServiceGetTaskInstance = <
  * @param data.dagId
  * @param data.dagRunId
  * @param data.taskId
+ * @param data.runAfterGte
+ * @param data.runAfterLte
  * @param data.logicalDateGte
  * @param data.logicalDateLte
  * @param data.startDateGte
@@ -1624,6 +1673,8 @@ export const useTaskInstanceServiceGetMappedTaskInstances = <
     orderBy,
     pool,
     queue,
+    runAfterGte,
+    runAfterLte,
     startDateGte,
     startDateLte,
     state,
@@ -1646,6 +1697,8 @@ export const useTaskInstanceServiceGetMappedTaskInstances = <
     orderBy?: string;
     pool?: string[];
     queue?: string[];
+    runAfterGte?: string;
+    runAfterLte?: string;
     startDateGte?: string;
     startDateLte?: string;
     state?: string[];
@@ -1674,6 +1727,8 @@ export const useTaskInstanceServiceGetMappedTaskInstances = <
         orderBy,
         pool,
         queue,
+        runAfterGte,
+        runAfterLte,
         startDateGte,
         startDateLte,
         state,
@@ -1700,6 +1755,8 @@ export const useTaskInstanceServiceGetMappedTaskInstances = <
         orderBy,
         pool,
         queue,
+        runAfterGte,
+        runAfterLte,
         startDateGte,
         startDateLte,
         state,
@@ -1912,6 +1969,8 @@ export const useTaskInstanceServiceGetMappedTaskInstance = <
  * @param data.dagId
  * @param data.dagRunId
  * @param data.taskId
+ * @param data.runAfterGte
+ * @param data.runAfterLte
  * @param data.logicalDateGte
  * @param data.logicalDateLte
  * @param data.startDateGte
@@ -1954,6 +2013,8 @@ export const useTaskInstanceServiceGetTaskInstances = <
     orderBy,
     pool,
     queue,
+    runAfterGte,
+    runAfterLte,
     startDateGte,
     startDateLte,
     state,
@@ -1977,6 +2038,8 @@ export const useTaskInstanceServiceGetTaskInstances = <
     orderBy?: string;
     pool?: string[];
     queue?: string[];
+    runAfterGte?: string;
+    runAfterLte?: string;
     startDateGte?: string;
     startDateLte?: string;
     state?: string[];
@@ -2006,6 +2069,8 @@ export const useTaskInstanceServiceGetTaskInstances = <
         orderBy,
         pool,
         queue,
+        runAfterGte,
+        runAfterLte,
         startDateGte,
         startDateLte,
         state,
@@ -2033,6 +2098,8 @@ export const useTaskInstanceServiceGetTaskInstances = <
         orderBy,
         pool,
         queue,
+        runAfterGte,
+        runAfterLte,
         startDateGte,
         startDateLte,
         state,
@@ -2848,6 +2915,42 @@ export const useAssetServiceCreateAssetEvent = <
   >({
     mutationFn: ({ requestBody }) =>
       AssetService.createAssetEvent({ requestBody }) as unknown as Promise<TData>,
+    ...options,
+  });
+/**
+ * Materialize Asset
+ * Materialize an asset by triggering a DAG run that produces it.
+ * @param data The data for the request.
+ * @param data.assetId
+ * @returns DAGRunResponse Successful Response
+ * @throws ApiError
+ */
+export const useAssetServiceMaterializeAsset = <
+  TData = Common.AssetServiceMaterializeAssetMutationResult,
+  TError = unknown,
+  TContext = unknown,
+>(
+  options?: Omit<
+    UseMutationOptions<
+      TData,
+      TError,
+      {
+        assetId: number;
+      },
+      TContext
+    >,
+    "mutationFn"
+  >,
+) =>
+  useMutation<
+    TData,
+    TError,
+    {
+      assetId: number;
+    },
+    TContext
+  >({
+    mutationFn: ({ assetId }) => AssetService.materializeAsset({ assetId }) as unknown as Promise<TData>,
     ...options,
   });
 /**

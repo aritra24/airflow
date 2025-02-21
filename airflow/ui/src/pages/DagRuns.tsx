@@ -43,26 +43,20 @@ const runColumns = (dagId?: string): Array<ColumnDef<DAGRunResponse>> => [
     : [
         {
           accessorKey: "dag_id",
-          cell: ({ row: { original } }: DagRunRow) => (
-            <Link asChild color="fg.info" fontWeight="bold">
-              <RouterLink to={`/dags/${original.dag_id}`}>{original.dag_id}</RouterLink>
-            </Link>
-          ),
           enableSorting: false,
           header: "Dag ID",
         },
       ]),
   {
-    accessorKey: "run_id",
+    accessorKey: "run_after",
     cell: ({ row: { original } }: DagRunRow) => (
       <Link asChild color="fg.info" fontWeight="bold">
         <RouterLink to={`/dags/${original.dag_id}/runs/${original.dag_run_id}`}>
-          {original.dag_run_id}
+          <Time datetime={original.run_after} />
         </RouterLink>
       </Link>
     ),
-    enableSorting: false,
-    header: "Run ID",
+    header: "Run After",
   },
   {
     accessorKey: "state",
@@ -123,7 +117,7 @@ export const DagRuns = () => {
   const { setTableURLState, tableURLState } = useTableURLState();
   const { pagination, sorting } = tableURLState;
   const [sort] = sorting;
-  const orderBy = sort ? `${sort.desc ? "-" : ""}${sort.id}` : "-logical_date";
+  const orderBy = sort ? `${sort.desc ? "-" : ""}${sort.id}` : "-run_after";
 
   const filteredState = searchParams.get(STATE_PARAM);
 
