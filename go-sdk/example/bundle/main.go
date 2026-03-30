@@ -45,7 +45,7 @@ func (m *myBundle) GetBundleVersion() v1.BundleInfo {
 }
 
 func (m *myBundle) RegisterDags(dagbag v1.Registry) error {
-	tutorial_dag := dagbag.AddDag("tutorial_dag")
+	tutorial_dag := dagbag.AddDag("simple_dag")
 	tutorial_dag.AddTask(extract)
 	tutorial_dag.AddTask(transform)
 	tutorial_dag.AddTask(load)
