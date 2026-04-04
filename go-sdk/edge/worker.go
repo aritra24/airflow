@@ -453,7 +453,7 @@ func (w *worker) runWorkload(
 	bundleClient := raw.(bundlev1client.BundleClient)
 	err = bundleClient.ExecuteTaskWorkload(ctx, workload)
 	if err != nil {
-		w.logger.Error("Workload failed", "error", err)
+		w.logger.Error("Workload failed", logging.AttrErr(err))
 	}
 	return err
 }
