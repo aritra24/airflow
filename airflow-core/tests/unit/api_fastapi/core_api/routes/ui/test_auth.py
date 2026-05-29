@@ -89,6 +89,24 @@ class TestGenerateToken:
         assert data["token_type"] == "api"
         assert data["expires_in_seconds"] == 86400  # default jwt_expiration_time
 
+        import jwt
+
+        payload = jwt.decode(data["access_token"], options={"verify_signature": False})
+        assert payload["aud"] == "apache-airflow"
+
+    def test_generate_token_with_audience(self, test_client):
+        """Test generating a token with a custom audience."""
+        response = test_client.post("/auth/token", json={"token_type": "api", "audience": "custom-audience"})
+
+        assert response.status_code == 200
+        data = response.json()
+        assert "access_token" in data
+
+        import jwt
+
+        payload = jwt.decode(data["access_token"], options={"verify_signature": False})
+        assert payload["aud"] == "custom-audience"
+
     def test_generate_cli_token(self, test_client):
         """Test generating a CLI token uses jwt_cli_expiration_time config."""
         response = test_client.post("/auth/token", json={"token_type": "cli"})

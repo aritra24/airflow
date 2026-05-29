@@ -244,3 +244,34 @@ class TestLogoutTokenRevocation:
         assert response.status_code == 307
         assert response.headers["location"] == "http://external/logout"
         assert RevokedToken.is_revoked("test-jti-redirect-456") is True
+
+
+class TestGetJwks:
+    def test_get_jwks_with_secret_key_returns_404(self, test_client):
+        """Test that JWKS endpoint returns 404 when configured with a symmetric secret key."""
+        # By default, the test client uses a symmetric secret key
+        response = test_client.get("/auth/jwks")
+        assert response.status_code == 404
+        assert response.json()["detail"] == "JWKS is only available when Airflow is configured with an asymmetric private key"
+
+    @patch("airflow.api_fastapi.core_api.routes.public.auth._load_key_from_configured_file")
+    def test_get_jwks_with_private_key_returns_200(self, mock_load_key, test_client):
+        """Test that JWKS endpoint returns 200 and the JWK when configured with an asymmetric private key."""
+        from cryptography.hazmat.primitives.asymmetric import rsa
+
+        # Generate a temporary RSA private key for testing
+        private_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+        mock_load_key.return_value = private_key
+
+        response = test_client.get("/auth/jwks")
+
+        assert response.status_code == 200
+        data = response.json()
+        assert "keys" in data
+        assert len(data["keys"]) == 1
+
+        jwk = data["keys"][0]
+        assert jwk["kty"] == "RSA"
+        assert "n" in jwk
+        assert "e" in jwk
+        assert "kid" in jwk

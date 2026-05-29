@@ -173,12 +173,17 @@ class BaseAuthManager(Generic[T], LoggingMixin, metaclass=ABCMeta):
         return []
 
     def generate_jwt(
-        self, user: T, *, expiration_time_in_seconds: int = conf.getint("api_auth", "jwt_expiration_time")
+        self,
+        user: T,
+        *,
+        expiration_time_in_seconds: int = conf.getint("api_auth", "jwt_expiration_time"),
+        audience: str | None = None,
     ) -> str:
         """Return the JWT token from a user object."""
-        return self._get_token_signer(expiration_time_in_seconds=expiration_time_in_seconds).generate(
-            self.serialize_user(user)
-        )
+        return self._get_token_signer(
+            expiration_time_in_seconds=expiration_time_in_seconds,
+            audience=audience,
+        ).generate(self.serialize_user(user))
 
     def get_cli_user(self) -> T:
         """
@@ -885,6 +890,7 @@ class BaseAuthManager(Generic[T], LoggingMixin, metaclass=ABCMeta):
     def _get_token_signer(
         cls,
         expiration_time_in_seconds: int = conf.getint("api_auth", "jwt_expiration_time"),
+        audience: str | None = None,
     ) -> JWTGenerator:
         """
         Return the signer used to sign JWT token.
@@ -892,11 +898,12 @@ class BaseAuthManager(Generic[T], LoggingMixin, metaclass=ABCMeta):
         :meta private:
 
         :param expiration_time_in_seconds: expiration time in seconds of the token
+        :param audience: the audience of the token
         """
         return JWTGenerator(
             **get_signing_args(),
             valid_for=expiration_time_in_seconds,
-            audience=cls._get_jwt_audience(),
+            audience=audience or cls._get_jwt_audience(),
         )
 
     @classmethod

@@ -48,6 +48,7 @@ class GenerateTokenBody(BaseModel):
     """Request body for generating a token."""
 
     token_type: TokenType = TokenType.API
+    audience: str | None = None
 
 
 class GenerateTokenResponse(BaseModel):

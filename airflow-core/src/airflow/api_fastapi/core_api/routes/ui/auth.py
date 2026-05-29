@@ -74,7 +74,9 @@ def generate_token(
     else:
         expiration_seconds = conf.getint("api_auth", "jwt_expiration_time")
 
-    access_token = get_auth_manager().generate_jwt(user, expiration_time_in_seconds=expiration_seconds)
+    access_token = get_auth_manager().generate_jwt(
+        user, expiration_time_in_seconds=expiration_seconds, audience=body.audience
+    )
 
     log.info(
         "User %s generated a %s token (expires in %d seconds)",

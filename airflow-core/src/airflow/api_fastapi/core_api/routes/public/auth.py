@@ -27,6 +27,7 @@ from airflow.api_fastapi.auth.managers.base_auth_manager import COOKIE_NAME_JWT_
 from airflow.api_fastapi.common.router import AirflowRouter
 from airflow.api_fastapi.core_api.openapi.exceptions import create_openapi_http_exception_doc
 from airflow.api_fastapi.core_api.security import AuthManagerDep, is_safe_url
+from airflow.api_fastapi.auth.tokens import _load_key_from_configured_file, key_to_jwk_dict
 from airflow.configuration import conf
 
 log = structlog.get_logger(logger_name=__name__)
@@ -88,3 +89,22 @@ def logout(request: Request, auth_manager: AuthManagerDep) -> RedirectResponse:
         )
 
     return response
+
+
+@auth_router.get(
+    "/jwks",
+    responses=create_openapi_http_exception_doc([status.HTTP_404_NOT_FOUND]),
+    response_model=dict,
+)
+def get_jwks() -> dict:
+    """Return the JSON Web Key Set (JWKS) if configured with an asymmetric key."""
+    private_key = _load_key_from_configured_file()
+    if not private_key:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="JWKS is only available when Airflow is configured with an asymmetric private key",
+        )
+    
+    kid = conf.get("api_auth", "jwt_kid", fallback=None)
+    jwk = key_to_jwk_dict(private_key, kid)
+    return {"keys": [jwk]}
