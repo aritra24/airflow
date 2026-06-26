@@ -15,6 +15,8 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
+export AIRFLOW_MCP_API_TOKEN="DEV_MCP_TOKEN"
+
 if [ ! -e /usr/local/bin/stop_airflow ]; then
     ln -s "/opt/airflow/scripts/in_container/stop_tmux_airflow.sh" /usr/local/bin/stop_airflow || true
 fi
@@ -70,13 +72,13 @@ if [[ ! ${USE_AIRFLOW_VERSION=} =~ ^2\..*  ]]; then
     # IPv4 and IPv6 host ports into the container). The default `0.0.0.0` binds IPv4 only.
     if [[ ${BREEZE_DEBUG_APISERVER} == "true" ]]; then
         tmux set-option -p @airflow_component "API Server(Debug Mode)"
-        tmux send-keys "debugpy --listen 0.0.0.0:${BREEZE_DEBUG_APISERVER_PORT} --wait-for-client -m airflow api-server --host '' -d" C-m
+        tmux send-keys "export AIRFLOW_MCP_API_TOKEN=DEV_MCP_TOKEN && debugpy --listen 0.0.0.0:${BREEZE_DEBUG_APISERVER_PORT} --wait-for-client -m airflow api-server --host '' -d" C-m
     else
   tmux set-option -p @airflow_component "API Server"
     if [[ ${DEV_MODE=} == "true" ]]; then
-        tmux send-keys "airflow api-server --host '' -d" C-m
+        tmux send-keys "export AIRFLOW_MCP_API_TOKEN=DEV_MCP_TOKEN && airflow api-server --host '' -d" C-m
     else
-        tmux send-keys "airflow api-server --host ''" C-m
+        tmux send-keys "export AIRFLOW_MCP_API_TOKEN=DEV_MCP_TOKEN && airflow api-server --host ''" C-m
     fi
     fi
 else
@@ -175,6 +177,13 @@ if [[ ${GO_WORKER} == "true" ]]; then
     tmux send-keys "export AIRFLOW__API_AUTH__SECRET_KEY=${AIRFLOW__API_AUTH__JWT_SECRET}" C-m
     tmux send-keys "export AIRFLOW__LOGGING__SECRET_KEY=${AIRFLOW__API_AUTH__JWT_SECRET}" C-m
     tmux send-keys "go run ./cmd/airflow-go-edge-worker/main.go run" C-m
+fi
+
+if [[ ${WITH_MCP} == "true" ]]; then
+    tmux select-pane -t 0
+    tmux split-window -h
+    tmux set-option -p @airflow_component "MCP Server"
+    tmux send-keys "export AIRFLOW_MCP_API_TOKEN=DEV_MCP_TOKEN && cd /opt/airflow/airflow-mcp && uv run fastmcp run src/airflow_mcp/server.py:mcp --transport http --host 0.0.0.0 --port 8081" C-m
 fi
 
 # Attach Session, on the Main window

@@ -18,7 +18,7 @@ from __future__ import annotations
 
 import os
 
-from fastmcp import FastMCP
+from fastmcp import Context, FastMCP
 
 from airflow_mcp.auth import build_auth_verifier
 from airflow_mcp.client import AirflowClient
@@ -64,7 +64,7 @@ def _create_mcp() -> FastMCP:
 mcp = _create_mcp()
 
 
-def get_client() -> AirflowClient:
+def get_client(ctx: Context | None = None) -> AirflowClient:
     """
     Return an AirflowClient backed by the service-account token.
 
@@ -77,9 +77,13 @@ def get_client() -> AirflowClient:
     fall through to the same service-account token, which is acceptable
     because stdio has no network exposure.
     """
+    user_id = None
+    if ctx and hasattr(ctx.request_context, "auth") and ctx.request_context.auth:
+        user_id = ctx.request_context.auth.claims.get("sub")
+
     base_url = os.environ.get("AIRFLOW_BASE_URL", "http://localhost:8080/api/v2")
     token = os.environ.get("AIRFLOW_MCP_API_TOKEN", "")
-    return AirflowClient(base_url=base_url, token=token)
+    return AirflowClient(base_url=base_url, token=token, user_id=user_id)
 
 
 # Startup warning if token is missing

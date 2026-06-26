@@ -40,5 +40,5 @@ def list_variables(ctx: Context) -> dict:
     dict
         A dictionary containing the list of variables.
     """
-    with get_client() as client:
+    with get_client(ctx) as client:
         return client.list_variables()

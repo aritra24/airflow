@@ -585,6 +585,12 @@ option_executor_start_airflow = click.option(
 @option_allow_pre_releases
 @option_use_distributions_from_dist
 @option_verbose
+@click.option(
+    "--with-mcp",
+    help="Starts the MCP server alongside other Airflow components.",
+    is_flag=True,
+    envvar="WITH_MCP",
+)
 def start_airflow(
     airflow_constraints_mode: str,
     airflow_constraints_location: str,
@@ -634,6 +640,7 @@ def start_airflow(
     use_airflow_version: str | None,
     use_distributions_from_dist: bool,
     use_uv: bool,
+    with_mcp: bool,
 ):
     """
     Enter breeze environment and starts all Airflow components in terminal multiplexer session.
@@ -740,6 +747,7 @@ def start_airflow(
         use_airflow_version=use_airflow_version,
         use_distributions_from_dist=use_distributions_from_dist,
         use_uv=use_uv,
+        with_mcp=with_mcp,
     )
     rebuild_or_pull_ci_image_if_needed(command_params=shell_params)
     result = enter_shell(shell_params=shell_params)

@@ -26,6 +26,7 @@ Run with::
 from __future__ import annotations
 
 from airflow_mcp.app import mcp
+import airflow_mcp.tools
 
 if __name__ == "__main__":
     mcp.run()

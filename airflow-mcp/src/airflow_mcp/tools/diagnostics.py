@@ -16,11 +16,13 @@
 # under the License.
 from __future__ import annotations
 
+from fastmcp import Context
+
 from airflow_mcp.app import get_client, mcp
 
 
 @mcp.tool()
-def diagnose_dag_run(dag_id: str, dag_run_id: str) -> dict:
+def diagnose_dag_run(ctx: Context, dag_id: str, dag_run_id: str) -> dict:
     """
     Get diagnostic information for a specific Dag run.
 
@@ -39,5 +41,5 @@ def diagnose_dag_run(dag_id: str, dag_run_id: str) -> dict:
     dict
         A dictionary containing 'dag_run' details and its 'task_instances'.
     """
-    with get_client() as client:
+    with get_client(ctx) as client:
         return client.diagnose_dag_run(dag_id, dag_run_id)

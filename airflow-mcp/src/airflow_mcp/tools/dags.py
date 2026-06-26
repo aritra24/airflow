@@ -16,11 +16,13 @@
 # under the License.
 from __future__ import annotations
 
+from fastmcp import Context
+
 from airflow_mcp.app import get_client, mcp
 
 
 @mcp.tool()
-def list_dags() -> dict:
+def list_dags(ctx: Context) -> dict:
     """
     List all available Dags in the Airflow environment.
 
@@ -29,12 +31,12 @@ def list_dags() -> dict:
     dict
         A dictionary containing a list of dags and the total count.
     """
-    with get_client() as client:
+    with get_client(ctx) as client:
         return client.list_dags()
 
 
 @mcp.tool()
-def get_dag(dag_id: str) -> dict:
+def get_dag(ctx: Context, dag_id: str) -> dict:
     """
     Get basic information about a specific Dag.
 
@@ -48,12 +50,12 @@ def get_dag(dag_id: str) -> dict:
     dict
         A dictionary containing the Dag's details.
     """
-    with get_client() as client:
+    with get_client(ctx) as client:
         return client.get_dag(dag_id)
 
 
 @mcp.tool()
-def list_dag_runs(dag_id: str, limit: int = 100) -> dict:
+def list_dag_runs(ctx: Context, dag_id: str, limit: int = 100) -> dict:
     """
     List historical executions (Dag Runs) for a specific Dag.
 
@@ -69,5 +71,5 @@ def list_dag_runs(dag_id: str, limit: int = 100) -> dict:
     dict
         A dictionary containing the list of dag runs.
     """
-    with get_client() as client:
+    with get_client(ctx) as client:
         return client.list_dag_runs(dag_id, limit)

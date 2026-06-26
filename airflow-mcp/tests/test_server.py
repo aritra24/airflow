@@ -40,17 +40,21 @@ def _make_mock_client(return_values: dict):
 
 def test_list_dags_tool():
     from airflow_mcp.tools.dags import list_dags
+    from fastmcp import Context
 
+    mock_ctx = MagicMock(spec=Context)
     mock = _make_mock_client({"list_dags": {"dags": [{"dag_id": "test_dag"}]}})
     with patch("airflow_mcp.tools.dags.get_client", return_value=mock):
-        result = list_dags()
+        result = list_dags(mock_ctx)
 
     assert result["dags"][0]["dag_id"] == "test_dag"
 
 
 def test_diagnose_dag_run_tool():
     from airflow_mcp.tools.diagnostics import diagnose_dag_run
+    from fastmcp import Context
 
+    mock_ctx = MagicMock(spec=Context)
     mock = _make_mock_client(
         {
             "diagnose_dag_run": {
@@ -60,7 +64,7 @@ def test_diagnose_dag_run_tool():
         }
     )
     with patch("airflow_mcp.tools.diagnostics.get_client", return_value=mock):
-        result = diagnose_dag_run("test_dag", "test_run")
+        result = diagnose_dag_run(mock_ctx, "test_dag", "test_run")
 
     assert result["dag_run"]["state"] == "failed"
 
@@ -72,14 +76,25 @@ def test_get_client_uses_service_account_token_not_user_token():
     never a user's JWT.  This proves there is no token passthrough.
     """
     from airflow_mcp.app import get_client
+    from fastmcp import Context
 
     # Simulate two sequential calls as if different users triggered them.
-    client_a = get_client()
-    client_b = get_client()
+    mock_ctx_a = MagicMock(spec=Context)
+    mock_ctx_a.request_context.auth.claims = {"sub": "alice"}
+    
+    mock_ctx_b = MagicMock(spec=Context)
+    mock_ctx_b.request_context.auth.claims = {"sub": "bob"}
+    
+    client_a = get_client(mock_ctx_a)
+    client_b = get_client(mock_ctx_b)
 
     # Both must use the service-account token from env, not any user JWT.
     assert client_a._http.headers["Authorization"] == "Bearer svc-account-token"
     assert client_b._http.headers["Authorization"] == "Bearer svc-account-token"
+    
+    # But they must carry the impersonation header.
+    assert client_a._http.headers["X-Airflow-On-Behalf-Of"] == "alice"
+    assert client_b._http.headers["X-Airflow-On-Behalf-Of"] == "bob"
 
     client_a._http.close()
     client_b._http.close()

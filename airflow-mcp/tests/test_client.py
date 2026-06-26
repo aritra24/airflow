@@ -31,6 +31,20 @@ def test_airflow_client_list_dags(respx_mock):
 
     request = respx_mock.calls.last.request
     assert request.headers["Authorization"] == "Bearer fake-token"
+    assert "X-Airflow-On-Behalf-Of" not in request.headers
+
+
+def test_airflow_client_on_behalf_of_header(respx_mock):
+    respx_mock.get("http://localhost:8080/api/v2/dags").respond(json={"dags": [], "total_entries": 0})
+
+    client = AirflowClient(
+        base_url="http://localhost:8080/api/v2", token="fake-token", user_id="test_user"
+    )
+    client.list_dags()
+
+    request = respx_mock.calls.last.request
+    assert request.headers["Authorization"] == "Bearer fake-token"
+    assert request.headers["X-Airflow-On-Behalf-Of"] == "test_user"
 
 
 def test_airflow_client_diagnose_dag_run(respx_mock):

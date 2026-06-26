@@ -252,6 +252,7 @@ class ShellParams:
     verbose_commands: bool = False
     version_suffix: str = ""
     warn_image_upgrade_needed: bool = False
+    with_mcp: bool = False
 
     def clone_with_test(self, test_type: str) -> ShellParams:
         new_params = deepcopy(self)
@@ -725,6 +726,7 @@ services:
         _set_var(_env, "WEB_HOST_PORT", None, WEB_HOST_PORT)
         _set_var(_env, "_AIRFLOW_RUN_DB_TESTS_ONLY", self.run_db_tests_only)
         _set_var(_env, "_AIRFLOW_SKIP_DB_TESTS", self.skip_db_tests)
+        _set_var(_env, "WITH_MCP", self.with_mcp)
 
         self._set_debug_variables(_env)
         self._generate_env_for_docker_compose_file_if_needed(_env)

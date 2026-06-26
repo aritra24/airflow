@@ -34,10 +34,16 @@ class AirflowClient:
 
     DEFAULT_TIMEOUT = httpx.Timeout(timeout=30.0, connect=10.0)
 
-    def __init__(self, base_url: str, token: str) -> None:
+    def __init__(self, base_url: str, token: str, user_id: str | None = None) -> None:
+        headers = {}
+        if token:
+            headers["Authorization"] = f"Bearer {token}"
+        if user_id:
+            headers["X-Airflow-On-Behalf-Of"] = user_id
+
         self._http = httpx.Client(
             base_url=base_url.rstrip("/"),
-            headers={"Authorization": f"Bearer {token}"},
+            headers=headers,
             timeout=self.DEFAULT_TIMEOUT,
         )
 

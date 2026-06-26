@@ -24,6 +24,8 @@ every ``@mcp.tool()`` decorated function with the FastMCP instance in
 
 from __future__ import annotations
 
+from fastmcp import Context
+
 from airflow_mcp.tools import dags, diagnostics, tasks, variables
 
 __all__ = ["dags", "tasks", "diagnostics", "variables"]

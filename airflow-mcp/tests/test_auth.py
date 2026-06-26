@@ -156,13 +156,14 @@ async def test_verifier_network_error(verifier):
     """If the JWKS fetch fails, verification raises or returns None."""
     token = _make_token()
     with patch.object(verifier, "_fetch_jwks", new=AsyncMock(side_effect=Exception("Network error"))):
-        with pytest.raises(Exception):
+        with pytest.raises(Exception, match="Network error"):
             await verifier.verify_token(token)
 
 
 def test_require_scope_decorator():
-    from airflow_mcp.auth import require_scope
     from unittest.mock import MagicMock
+
+    from airflow_mcp.auth import require_scope
 
     class MockAccessToken:
         def __init__(self, claims):

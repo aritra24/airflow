@@ -162,6 +162,16 @@ async def get_user(
     else:
         token_str = request.cookies.get(COOKIE_NAME_JWT_TOKEN)
 
+    # WARNING: This needs to change, we're using a fixed token for MCP server for now, until we add proper auth
+    import os
+    mcp_token = os.environ.get("AIRFLOW_MCP_API_TOKEN")
+    if mcp_token and token_str == mcp_token:
+        on_behalf_of = request.headers.get("X-Airflow-On-Behalf-Of") or "mcp_service_account"
+        user = get_auth_manager().get_cli_user()
+        if hasattr(user, "username"):
+            user.username = on_behalf_of
+        return user
+
     return await resolve_user_from_token(token_str)
 
 

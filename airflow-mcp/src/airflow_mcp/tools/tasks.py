@@ -16,11 +16,13 @@
 # under the License.
 from __future__ import annotations
 
+from fastmcp import Context
+
 from airflow_mcp.app import get_client, mcp
 
 
 @mcp.tool()
-def list_task_instances(dag_id: str, dag_run_id: str) -> dict:
+def list_task_instances(ctx: Context, dag_id: str, dag_run_id: str) -> dict:
     """
     List the states of all task instances within a specific Dag run.
 
@@ -36,12 +38,12 @@ def list_task_instances(dag_id: str, dag_run_id: str) -> dict:
     dict
         A dictionary containing the task instances.
     """
-    with get_client() as client:
+    with get_client(ctx) as client:
         return client.list_task_instances(dag_id, dag_run_id)
 
 
 @mcp.tool()
-def get_task_instance(dag_id: str, dag_run_id: str, task_id: str) -> dict:
+def get_task_instance(ctx: Context, dag_id: str, dag_run_id: str, task_id: str) -> dict:
     """
     Get detailed information about a specific task instance.
 
@@ -59,12 +61,12 @@ def get_task_instance(dag_id: str, dag_run_id: str, task_id: str) -> dict:
     dict
         A dictionary containing the task instance details.
     """
-    with get_client() as client:
+    with get_client(ctx) as client:
         return client.get_task_instance(dag_id, dag_run_id, task_id)
 
 
 @mcp.tool()
-def get_task_logs(dag_id: str, dag_run_id: str, task_id: str, task_try_number: int) -> dict:
+def get_task_logs(ctx: Context, dag_id: str, dag_run_id: str, task_id: str, task_try_number: int) -> dict:
     """
     Retrieve raw execution logs for a specific task instance try.
 
@@ -84,5 +86,5 @@ def get_task_logs(dag_id: str, dag_run_id: str, task_id: str, task_try_number: i
     dict
         A dictionary containing the raw text log content.
     """
-    with get_client() as client:
+    with get_client(ctx) as client:
         return client.get_task_logs(dag_id, dag_run_id, task_id, task_try_number)

@@ -90,6 +90,7 @@ VOLUMES_FOR_SELECTED_MOUNTS = [
     ("RELEASE_NOTES.rst", "/opt/airflow/RELEASE_NOTES.rst"),
     ("airflow-core", "/opt/airflow/airflow-core"),
     ("airflow-ctl", "/opt/airflow/airflow-ctl"),
+    ("airflow-mcp", "/opt/airflow/airflow-mcp"),
     ("chart", "/opt/airflow/chart"),
     ("clients", "/opt/airflow/clients"),
     ("constraints", "/opt/airflow/constraints"),

@@ -209,8 +209,24 @@ def generate_mprocs_config() -> str:
         "scrollback": 100000,
     }
 
+    # MCP Server (conditional)
+    if get_env_bool("WITH_MCP"):
+        mcp_cmd = "uv run fastmcp run src/airflow_mcp/server.py:mcp --transport http --host 0.0.0.0 --port 8081"
+        procs["mcp server"] = {
+            "shell": mcp_cmd,
+            "cwd": "/opt/airflow/airflow-mcp",
+            "restart": "always",
+            "scrollback": 100000,
+            "env": {"AIRFLOW_MCP_API_TOKEN": "DEV_MCP_TOKEN"},
+        }
+
+    if "api_server" in procs:
+        procs["api_server"]["env"] = {"AIRFLOW_MCP_API_TOKEN": "DEV_MCP_TOKEN"}
+
     # Generate YAML output
-    config_dict = {"procs": procs}
+    config_dict = {
+        "procs": procs,
+    }
     return yaml.dump(config_dict, default_flow_style=False, sort_keys=False)
 
 

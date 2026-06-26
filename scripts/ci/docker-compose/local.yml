@@ -64,6 +64,9 @@ services:
         source: ../../../airflow-ctl
         target: /opt/airflow/airflow-ctl
       - type: bind
+        source: ../../../airflow-mcp
+        target: /opt/airflow/airflow-mcp
+      - type: bind
         source: ../../../chart
         target: /opt/airflow/chart
       - type: bind
