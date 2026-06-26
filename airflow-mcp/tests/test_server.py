@@ -43,8 +43,8 @@ def test_list_dags_tool():
     from fastmcp import Context
 
     mock_ctx = MagicMock(spec=Context)
-    mock = _make_mock_client({"list_dags": {"dags": [{"dag_id": "test_dag"}]}})
-    with patch("airflow_mcp.tools.dags.get_client", return_value=mock):
+    with patch("airflow_mcp.tools.dags.get_client"), patch("airflow_mcp.tools.dags.DAGApi") as mock_dag_api:
+        mock_dag_api.return_value.get_dags.return_value.to_dict.return_value = {"dags": [{"dag_id": "test_dag"}]}
         result = list_dags(mock_ctx)
 
     assert result["dags"][0]["dag_id"] == "test_dag"
@@ -55,15 +55,14 @@ def test_diagnose_dag_run_tool():
     from fastmcp import Context
 
     mock_ctx = MagicMock(spec=Context)
-    mock = _make_mock_client(
-        {
-            "diagnose_dag_run": {
-                "dag_run": {"state": "failed"},
-                "task_instances": {"task_instances": []},
-            }
-        }
-    )
-    with patch("airflow_mcp.tools.diagnostics.get_client", return_value=mock):
+    
+    with patch("airflow_mcp.tools.diagnostics.get_client"), \
+         patch("airflow_mcp.tools.diagnostics.DagRunApi") as mock_dag_run_api, \
+         patch("airflow_mcp.tools.diagnostics.TaskInstanceApi") as mock_task_instance_api:
+        
+        mock_dag_run_api.return_value.get_dag_run.return_value.to_dict.return_value = {"state": "failed"}
+        mock_task_instance_api.return_value.get_task_instances.return_value.to_dict.return_value = {"task_instances": []}
+        
         result = diagnose_dag_run(mock_ctx, "test_dag", "test_run")
 
     assert result["dag_run"]["state"] == "failed"
@@ -89,12 +88,10 @@ def test_get_client_uses_service_account_token_not_user_token():
     client_b = get_client(mock_ctx_b)
 
     # Both must use the service-account token from env, not any user JWT.
-    assert client_a._http.headers["Authorization"] == "Bearer svc-account-token"
-    assert client_b._http.headers["Authorization"] == "Bearer svc-account-token"
+    assert client_a.configuration.access_token == "svc-account-token"
+    assert client_b.configuration.access_token == "svc-account-token"
     
     # But they must carry the impersonation header.
-    assert client_a._http.headers["X-Airflow-On-Behalf-Of"] == "alice"
-    assert client_b._http.headers["X-Airflow-On-Behalf-Of"] == "bob"
+    assert client_a.default_headers["X-Airflow-On-Behalf-Of"] == "alice"
+    assert client_b.default_headers["X-Airflow-On-Behalf-Of"] == "bob"
 
-    client_a._http.close()
-    client_b._http.close()

@@ -21,6 +21,8 @@ from fastmcp import Context
 from airflow_mcp.app import get_client, mcp
 from airflow_mcp.auth import require_scope
 
+from airflow_client.client.api.variable_api import VariableApi
+
 
 @mcp.tool()
 @require_scope("admin")
@@ -41,4 +43,4 @@ def list_variables(ctx: Context) -> dict:
         A dictionary containing the list of variables.
     """
     with get_client(ctx) as client:
-        return client.list_variables()
+        return VariableApi(client).get_variables().to_dict()

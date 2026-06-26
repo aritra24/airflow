@@ -20,6 +20,8 @@ from fastmcp import Context
 
 from airflow_mcp.app import get_client, mcp
 
+from airflow_client.client.api.task_instance_api import TaskInstanceApi
+
 
 @mcp.tool()
 def list_task_instances(ctx: Context, dag_id: str, dag_run_id: str) -> dict:
@@ -39,7 +41,7 @@ def list_task_instances(ctx: Context, dag_id: str, dag_run_id: str) -> dict:
         A dictionary containing the task instances.
     """
     with get_client(ctx) as client:
-        return client.list_task_instances(dag_id, dag_run_id)
+        return TaskInstanceApi(client).get_task_instances(dag_id, dag_run_id).to_dict()
 
 
 @mcp.tool()
@@ -62,7 +64,7 @@ def get_task_instance(ctx: Context, dag_id: str, dag_run_id: str, task_id: str) 
         A dictionary containing the task instance details.
     """
     with get_client(ctx) as client:
-        return client.get_task_instance(dag_id, dag_run_id, task_id)
+        return TaskInstanceApi(client).get_task_instance(dag_id, dag_run_id, task_id).to_dict()
 
 
 @mcp.tool()
@@ -87,4 +89,4 @@ def get_task_logs(ctx: Context, dag_id: str, dag_run_id: str, task_id: str, task
         A dictionary containing the raw text log content.
     """
     with get_client(ctx) as client:
-        return client.get_task_logs(dag_id, dag_run_id, task_id, task_try_number)
+        return TaskInstanceApi(client).get_log(dag_id, dag_run_id, task_id, task_try_number).to_dict()

@@ -21,7 +21,6 @@ import os
 from fastmcp import Context, FastMCP
 
 from airflow_mcp.auth import build_auth_verifier
-from airflow_mcp.client import AirflowClient
 
 # ---------------------------------------------------------------------------
 # Configuration
@@ -64,9 +63,11 @@ def _create_mcp() -> FastMCP:
 mcp = _create_mcp()
 
 
-def get_client(ctx: Context | None = None) -> AirflowClient:
+from airflow_client.client import ApiClient, Configuration
+
+def get_client(ctx: Context | None = None) -> ApiClient:
     """
-    Return an AirflowClient backed by the service-account token.
+    Return an Airflow ApiClient backed by the service-account token.
 
     In HTTP mode the incoming JWT identifies the caller to *this* server via
     ``get_access_token().claims["sub"]``.  That identity is never forwarded to
@@ -81,9 +82,17 @@ def get_client(ctx: Context | None = None) -> AirflowClient:
     if ctx and hasattr(ctx.request_context, "auth") and ctx.request_context.auth:
         user_id = ctx.request_context.auth.claims.get("sub")
 
-    base_url = os.environ.get("AIRFLOW_BASE_URL", "http://localhost:8080/api/v2")
+    base_url = os.environ.get("AIRFLOW_BASE_URL", "http://localhost:8080")
     token = os.environ.get("AIRFLOW_MCP_API_TOKEN", "")
-    return AirflowClient(base_url=base_url, token=token, user_id=user_id)
+    
+    configuration = Configuration(host=base_url)
+    configuration.access_token = token
+    
+    client = ApiClient(configuration)
+    if user_id:
+        client.default_headers["X-Airflow-On-Behalf-Of"] = user_id
+        
+    return client
 
 
 # Startup warning if token is missing

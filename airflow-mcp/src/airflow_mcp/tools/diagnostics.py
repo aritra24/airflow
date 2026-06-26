@@ -20,6 +20,9 @@ from fastmcp import Context
 
 from airflow_mcp.app import get_client, mcp
 
+from airflow_client.client.api.dag_run_api import DagRunApi
+from airflow_client.client.api.task_instance_api import TaskInstanceApi
+
 
 @mcp.tool()
 def diagnose_dag_run(ctx: Context, dag_id: str, dag_run_id: str) -> dict:
@@ -42,4 +45,9 @@ def diagnose_dag_run(ctx: Context, dag_id: str, dag_run_id: str) -> dict:
         A dictionary containing 'dag_run' details and its 'task_instances'.
     """
     with get_client(ctx) as client:
-        return client.diagnose_dag_run(dag_id, dag_run_id)
+        dag_run = DagRunApi(client).get_dag_run(dag_id, dag_run_id).to_dict()
+        task_instances = TaskInstanceApi(client).get_task_instances(dag_id, dag_run_id).to_dict()
+        return {
+            "dag_run": dag_run,
+            "task_instances": task_instances,
+        }
